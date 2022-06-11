@@ -1,1 +1,4 @@
+# Where CMake will create everything
+build/
+
 .DS_Store

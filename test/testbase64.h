@@ -9,15 +9,17 @@
 #ifndef BASE64TEST_H
 #define BASE64TEST_H
 
+#include <time.h>
+
 #include "Timer.h"
 
 extern int BASE64TESTSHOWDATA;
 extern int SHOWTIMING;
 
 // Function for automated testing of base64.h.  Also times.
-int testBase64( const void* data, int dataLen );
+int testBase64(const void* data, int dataLen);
 
-int testBase64String( const char* str );
+int testBase64String(const char* str);
 
 void testUnbase64WithBadAscii(void);
 

@@ -297,7 +297,7 @@ int base64_block(base64_block_data_t* input, base64_block_encoded_t* output) {
       break;
 
     default:
-      // len is not within the supported range. Return 1- for error.
+      // len is not within the supported range. Return -1 for error.
       return -1;
   }
 

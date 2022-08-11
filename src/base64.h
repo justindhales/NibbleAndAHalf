@@ -33,12 +33,14 @@
   dynamically allocate memory.
 
 */
-#ifndef BASE64_H
-#define BASE64_H
+#ifndef NIBBLEANDAHALF_SRC_BASE64_H
+#define NIBBLEANDAHALF_SRC_BASE64_H
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#define INVALID_BASE64 (-1000)
 
 typedef struct {
   unsigned char c[4];
@@ -68,6 +70,8 @@ typedef struct {
 // (you must pass pointer flen).
 char* base64(const void* binaryData, int len, int* flen);
 
+int base64_2(void const *data, int data_len, char *chars, int *chars_len);
+
 int base64_block(base64_block_data_t* input, base64_block_encoded_t* output);
 
 // Convert your base64 string haJIh/+ back to binary data.
@@ -75,6 +79,8 @@ int base64_block(base64_block_data_t* input, base64_block_encoded_t* output);
 // Final size will be stored in flen
 // (you must pass pointer flen).
 unsigned char* unbase64(const char* ascii, int len, int* flen);
+
+int unbase64_2(unsigned char const *ascii, int ascii_len, uint8_t *data, int *data_len);
 
 int unbase64_block(base64_block_encoded_t* input, base64_block_data_t* output);
 
@@ -91,4 +97,4 @@ int unbase64_block(base64_block_encoded_t* input, base64_block_data_t* output);
 // a multiple of 4, and it contains only valid base64 chrs.
 int base64integrity(const char* ascii, int len);
 
-#endif
+#endif  // NIBBLEANDAHALF_SRC_BASE64_H

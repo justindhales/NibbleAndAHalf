@@ -8,6 +8,9 @@
 
 #include "base64.h"
 
+#include <assert.h>
+#include <errno.h>
+
 // MAPS
 // b64 maps 0=>A, 1=>B..63=>/ etc
 //                      ----------1---------2---------3---------4---------5---------6---
@@ -245,6 +248,82 @@ char* base64(const void* binaryData, int len, int* flen) {
   return base64String;
 }
 
+int base64_2_helper(uint8_t const *input, int input_len, uint8_t *output) {
+  uint8_t BYTE0, BYTE1, BYTE2;
+
+  switch (input_len) {
+    case 3:
+      // Convert 3 bytes to 4 base64 characters.
+      BYTE0 = input[0];
+      BYTE1 = input[1];
+      BYTE2 = input[2];
+
+      output[0] = b64[SEXTET_A(BYTE0)];
+      output[1] = b64[SEXTET_B(BYTE0, BYTE1)];
+      output[2] = b64[SEXTET_C(BYTE1, BYTE2)];
+      output[3] = b64[SEXTET_D(BYTE2)];
+      break;
+    case 2:
+    // Convert 2 bytes to 3 base64 characters and 1 pad character.
+      BYTE0 = input[0];
+      BYTE1 = input[1];
+
+      output[0] = b64[SEXTET_A(BYTE0)];
+      output[1] = b64[SEXTET_B(BYTE0, BYTE1)];
+      output[2] = b64[(0xf & BYTE1) << 2];
+      output[3] = '=';
+      break;
+    case 1:
+    // Convert 1 byte to 2 base64 characters and 2 pad characters.
+      BYTE0 = input[0];
+
+      output[0] = b64[SEXTET_A(BYTE0)];
+      output[1] = b64[(0x3 & BYTE0) << 4];
+      output[2] = '=';
+      output[3] = '=';
+      break;
+    case 0:
+      break;
+    default:
+      return -1;
+  }
+
+  return 0;
+}
+
+int base64_2(void const *data, int data_len, char *chars, int *chars_len) {
+  assert(data != NULL);
+  assert(data_len >= 0);
+  assert(chars == NULL);
+  assert(chars_len != NULL);
+
+  if (data_len == 0) {
+    *chars_len = 0;
+    return 0;
+  }
+
+  *chars_len = (((data_len - 1) / 3) + 1) * 4;
+
+  chars = malloc(*chars_len + 1);
+  if (chars == NULL) {
+    perror("malloc(*chars_len)");
+    return -errno;
+  }
+  // Add null terminator
+  chars[*chars_len] = 0;
+
+  int chars_i = 0;
+  int byteNo;
+  uint8_t BYTE0, BYTE1, BYTE2;
+  for (byteNo = 0; byteNo < data_len - 3; byteNo += 3, chars_i += 4) {
+    base64_2_helper((uint8_t *) data + byteNo, 3, &(chars[chars_i]));
+  }
+
+  base64_2_helper((uint8_t *) data + byteNo, data_len - byteNo, &(chars[chars_i]));
+
+  return 0;
+}
+
 /**
  * @brief Converts up to three bytes of data to base64 characters.
  *
@@ -272,7 +351,7 @@ int base64_block(base64_block_data_t* input, base64_block_encoded_t* output) {
       break;
 
     case 2:
-      // Convert 2 bytes to 3 base64 characters and 1 pad character.
+      
       BYTE0 = input->b[0];
       BYTE1 = input->b[1];
 
@@ -408,6 +487,98 @@ unsigned char* unbase64(const char* ascii, int len, int* flen) {
   }
 
   return bin;
+}
+
+int unbase64_2_helper(uint8_t const *input, int input_len, uint8_t *output) {
+  unsigned char A, B, C, D;
+
+  switch (input_len) {
+    case 4:
+      // Can extract 3 bytes.
+      A = unb64[input[0]];
+      B = unb64[input[1]];
+      C = unb64[input[2]];
+      D = unb64[input[3]];
+
+      output[0] = (A << 2) | (B >> 4);
+      output[1] = (B << 4) | (C >> 2);
+      output[2] = (C << 6) | (D);
+      break;
+    case 3:
+      // Assuming that the last character is padding
+      // Can extract only 2 bytes.
+      A = unb64[input[0]];
+      B = unb64[input[1]];
+      C = unb64[input[2]];
+
+      output[0] = (A << 2) | (B >> 4);
+      output[1] = (B << 4) | (C >> 2);
+      break;
+    case 2:
+      // Assuming that the last two characters are padding
+      // Can extract only 1 byte.
+      A = unb64[input[0]];
+      B = unb64[input[1]];
+
+      output[0] = (A << 2) | (B >> 4);
+      break;
+    case 1:
+      // It's impossible to decode a base64 string of length 1. The single
+      // base64 character encodes only 6 bits.
+      // Return -1 for error (data was present but could not be extracted).
+      return INVALID_BASE64;
+    case 0:
+      break;
+    default:
+      return -1;
+  }
+
+  return 0;
+}
+
+int unbase64_2(unsigned char const *ascii, int ascii_len, uint8_t *data, int *data_len) {
+  assert(ascii != NULL);
+  assert(ascii_len >= 0);
+  assert(data == NULL);
+  assert(data_len != NULL);
+
+  if (ascii_len == 0) {
+    *data_len = 0;
+    return 0;
+  }
+
+  if (!base64integrity(ascii, ascii_len)) {
+    return INVALID_BASE64;  // Return error if bad integrity
+  }
+
+  int pad = 0;
+  if (ascii[ascii_len - 2] == '=') {
+    pad = 2;
+  } else if (ascii[ascii_len - 1] == '=') {
+    pad = 1;
+  }
+
+  *data_len = 3 * (ascii_len / 4) - pad;
+
+  data = malloc(*data_len + 1);
+  if (data == NULL) {
+    perror("malloc(*data_len + 1)");
+    return -errno;
+  }
+  // Add null terminator
+  data[*data_len] = 0;
+
+  int data_i = 0;
+  int byteNo;
+  for (byteNo = 0; byteNo < ascii_len - 4 - pad; byteNo += 3, data_i += 4) {
+    unbase64_2_helper((uint8_t *) ascii + byteNo, 4, &(data[data_i]));
+  }
+
+  if (pad != 0) {
+    unbase64_2_helper((uint8_t *) ascii + byteNo, 4 - pad, &(data[data_i]));
+  }
+
+  return 0;
 }
 
 int unbase64_block(base64_block_encoded_t* input, base64_block_data_t* output) {

@@ -70,7 +70,7 @@ typedef struct {
 // (you must pass pointer flen).
 char* base64(const void* binaryData, int len, int* flen);
 
-int base64_2(void const *data, int data_len, char *chars, int *chars_len);
+int base64_2(void const *data, size_t data_len, unsigned char *chars, size_t *chars_len);
 
 int base64_block(base64_block_data_t* input, base64_block_encoded_t* output);
 
@@ -80,7 +80,7 @@ int base64_block(base64_block_data_t* input, base64_block_encoded_t* output);
 // (you must pass pointer flen).
 unsigned char* unbase64(const char* ascii, int len, int* flen);
 
-int unbase64_2(unsigned char const *ascii, int ascii_len, uint8_t *data, int *data_len);
+int unbase64_2(unsigned char const *ascii, size_t ascii_len, uint8_t *data, size_t *data_len);
 
 int unbase64_block(base64_block_encoded_t* input, base64_block_data_t* output);
 

@@ -248,7 +248,7 @@ char* base64(const void* binaryData, int len, int* flen) {
   return base64String;
 }
 
-int base64_2_helper(uint8_t const *input, int input_len, uint8_t *output) {
+int base64_2_helper(uint8_t const *input, size_t input_len, uint8_t *output) {
   uint8_t BYTE0, BYTE1, BYTE2;
 
   switch (input_len) {
@@ -291,9 +291,8 @@ int base64_2_helper(uint8_t const *input, int input_len, uint8_t *output) {
   return 0;
 }
 
-int base64_2(void const *data, int data_len, char *chars, int *chars_len) {
+int base64_2(void const *data, size_t data_len, unsigned char *chars, size_t *chars_len) {
   assert(data != NULL);
-  assert(data_len >= 0);
   assert(chars == NULL);
   assert(chars_len != NULL);
 
@@ -312,11 +311,11 @@ int base64_2(void const *data, int data_len, char *chars, int *chars_len) {
   // Add null terminator
   chars[*chars_len] = 0;
 
-  int chars_i = 0;
-  int byteNo;
+  size_t chars_i = 0;
+  size_t byteNo;
   uint8_t BYTE0, BYTE1, BYTE2;
   for (byteNo = 0; byteNo < data_len - 3; byteNo += 3, chars_i += 4) {
-    base64_2_helper((uint8_t *) data + byteNo, 3, &(chars[chars_i]));
+    base64_2_helper((uint8_t *)data + byteNo, 3, &(chars[chars_i]));
   }
 
   base64_2_helper((uint8_t *) data + byteNo, data_len - byteNo, &(chars[chars_i]));
@@ -536,9 +535,8 @@ int unbase64_2_helper(uint8_t const *input, int input_len, uint8_t *output) {
   return 0;
 }
 
-int unbase64_2(unsigned char const *ascii, int ascii_len, uint8_t *data, int *data_len) {
+int unbase64_2(unsigned char const *ascii, size_t ascii_len, uint8_t *data, size_t *data_len) {
   assert(ascii != NULL);
-  assert(ascii_len >= 0);
   assert(data == NULL);
   assert(data_len != NULL);
 

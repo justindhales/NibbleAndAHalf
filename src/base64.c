@@ -291,34 +291,35 @@ int base64_2_helper(uint8_t const *input, size_t input_len, uint8_t *output) {
   return 0;
 }
 
-int base64_2(void const *data, size_t data_len, unsigned char *chars, size_t *chars_len) {
+int base64_2(void const *data, size_t data_len, unsigned char **ascii, size_t *ascii_len) {
   assert(data != NULL);
-  assert(chars == NULL);
-  assert(chars_len != NULL);
+  assert(ascii != NULL);
+  assert(*ascii == NULL);
+  assert(ascii_len != NULL);
 
   if (data_len == 0) {
-    *chars_len = 0;
+    *ascii_len = 0;
     return 0;
   }
 
-  *chars_len = (((data_len - 1) / 3) + 1) * 4;
+  *ascii_len = (((data_len - 1) / 3) + 1) * 4;
 
-  chars = malloc(*chars_len + 1);
-  if (chars == NULL) {
-    perror("malloc(*chars_len)");
+  *ascii = malloc(*ascii_len + 1);
+  if (*ascii == NULL) {
+    perror("malloc(*ascii_len + 1)");
     return -errno;
   }
   // Add null terminator
-  chars[*chars_len] = 0;
+  (*ascii)[*ascii_len] = 0;
 
-  size_t chars_i = 0;
-  size_t byteNo;
-  uint8_t BYTE0, BYTE1, BYTE2;
-  for (byteNo = 0; byteNo < data_len - 3; byteNo += 3, chars_i += 4) {
-    base64_2_helper((uint8_t *)data + byteNo, 3, &(chars[chars_i]));
+  size_t ascii_i;
+  size_t data_i;
+  // 3 bytes for every 4 base64 characters
+  for (data_i = 0, ascii_i = 0; data_i < data_len - 3; data_i += 3, ascii_i += 4) {
+    base64_2_helper((uint8_t *)data + data_i, 3, &((*ascii)[ascii_i]));
   }
 
-  base64_2_helper((uint8_t *) data + byteNo, data_len - byteNo, &(chars[chars_i]));
+  base64_2_helper((uint8_t *) data + data_i, data_len - data_i, &((*ascii)[ascii_i]));
 
   return 0;
 }
@@ -535,9 +536,10 @@ int unbase64_2_helper(uint8_t const *input, int input_len, uint8_t *output) {
   return 0;
 }
 
-int unbase64_2(unsigned char const *ascii, size_t ascii_len, uint8_t *data, size_t *data_len) {
+int unbase64_2(unsigned char const *ascii, size_t ascii_len, uint8_t **data, size_t *data_len) {
   assert(ascii != NULL);
-  assert(data == NULL);
+  assert(data != NULL);
+  assert(*data == NULL);
   assert(data_len != NULL);
 
   if (ascii_len == 0) {
@@ -556,24 +558,23 @@ int unbase64_2(unsigned char const *ascii, size_t ascii_len, uint8_t *data, size
     pad = 1;
   }
 
-  *data_len = 3 * (ascii_len / 4) - pad;
+  *data_len = (3 * (ascii_len / 4)) - pad;
 
-  data = malloc(*data_len + 1);
-  if (data == NULL) {
+  *data = malloc(*data_len);
+  if (*data == NULL) {
     perror("malloc(*data_len + 1)");
     return -errno;
   }
-  // Add null terminator
-  data[*data_len] = 0;
 
-  int data_i = 0;
-  int byteNo;
-  for (byteNo = 0; byteNo < ascii_len - 4 - pad; byteNo += 3, data_i += 4) {
-    unbase64_2_helper((uint8_t *) ascii + byteNo, 4, &(data[data_i]));
+  int ascii_i;
+  int data_i;
+  // 4 base64 characters for every 3 bytes
+  for (ascii_i = 0, data_i = 0; ascii_i <= ascii_len - 4 - pad; ascii_i += 4, data_i += 3) {
+    unbase64_2_helper((uint8_t *) ascii + ascii_i, 4, &((*data)[data_i]));
   }
 
   if (pad != 0) {
-    unbase64_2_helper((uint8_t *) ascii + byteNo, 4 - pad, &(data[data_i]));
+    unbase64_2_helper((uint8_t *) ascii + ascii_i, 4 - pad, &((*data)[data_i]));
   }
 
   return 0;

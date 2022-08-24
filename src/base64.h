@@ -40,7 +40,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define INVALID_BASE64 (-1000)
+#define INVALID_BASE64 (-6400)
 
 typedef struct {
   unsigned char c[4];

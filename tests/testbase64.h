@@ -6,8 +6,8 @@
 //  UNIT TESTS ONLY.
 //  YOU DO NOT NEED THIS FILE WHEN USING "base64.h"
 //
-#ifndef BASE64TEST_H
-#define BASE64TEST_H
+#ifndef NIBBLEANDAHALF_TESTS_TESTBASE64_H
+#define NIBBLEANDAHALF_TESTS_TESTBASE64_H
 
 #include <time.h>
 
@@ -30,4 +30,4 @@ void automatedTests(void);
 // Prints the unb64 array in base64.h
 void printUnbase64(void);
 
-#endif
+#endif  // NIBBLEANDAHALF_TESTS_TESTBASE64_H

@@ -4,6 +4,6 @@ project(base64 C)
 
 add_subdirectory(src)
 
-if(BUILD_TESTING)
+if(BUILD_TESTS)
   add_subdirectory(tests)
 endif()
